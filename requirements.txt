@@ -1,0 +1,39 @@
+import unittest
+
+from easytrieve_to_cobol.converter import convert_easytrieve_to_cobol, parse_easytrieve
+
+
+SAMPLE_INPUT = """
+FILE F1
+  NAME 10 A
+  SALES 5 N
+END-FILE
+
+READ F1
+  IF SALES > 1000
+    DISPLAY NAME SALES
+  END-IF
+END-PROGRAM
+"""
+
+
+class ConverterTests(unittest.TestCase):
+    def test_parse_file_definition(self):
+        program = parse_easytrieve(SAMPLE_INPUT)
+        self.assertEqual(len(program.files), 1)
+        self.assertEqual(program.files[0].name, "F1")
+        self.assertEqual(program.files[0].fields[0].name, "NAME")
+        self.assertEqual(program.files[0].fields[1].name, "SALES")
+
+    def test_conversion_generates_cobol(self):
+        result = convert_easytrieve_to_cobol(SAMPLE_INPUT)
+        self.assertIn("IDENTIFICATION DIVISION.", result)
+        self.assertIn("PROGRAM-ID. CONVERTED-PROGRAM.", result)
+        self.assertIn("FD  F1.", result)
+        self.assertIn("PIC X(10).", result)
+        self.assertIn("PIC 9(5).", result)
+        self.assertIn("IF SALES > 1000", result)
+
+
+if __name__ == "__main__":
+    unittest.main()
